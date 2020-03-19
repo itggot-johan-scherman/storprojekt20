@@ -2,6 +2,7 @@ require 'sinatra'
 require 'slim'
 require 'sqlite3'
 require 'bcrypt'
+require 'byebug'
 require_relative './model.rb'
 enable :sessions
 
@@ -44,20 +45,20 @@ end
 post("/new") do
     db = connect_db("db/database.db")
     title = params[:title]
-    title_check = db.execute("SELECT title FROM titles")
+    title_check = db.execute("SELECT * FROM titles WHERE title = ?", title)
     if title_check.scan(/#{title}/).empty?
         db.execute("INSERT INTO titles title = ?", title)
     end
     genre = params[:genre]
-    genre_check = db.execute("SELECT genre FROM titles")
-    if genre_check.scan(/#{genre}/).empty?
-        db.execute("INSERT INTO genres genre = ?", genre)
-    end
+    #genre_check = db.execute("SELECT genre FROM titles")
+    #if genre_check.scan(/#{genre}/).empty?
+    #    db.execute("INSERT INTO genres genre = ?", genre)
+    #end
     review = params[:review]
-    db.execute("INSERT INTO reviews content = ?", review)
+    db.execute("INSERT INTO reviews (content) VALUES (?)", review)
     redirect("/reviews")
 end
 
 get("/reviews") do
-
+    slim(:reviews)
 end
