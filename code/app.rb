@@ -29,8 +29,8 @@ post("/reviews") do
     if user_check != nil
         p password
         p password_check[2]
-        if password_check == password #password_digest
-            content = db.execute("SELECT content FROM reviews WHERE userid = ?", user_check)
+        if password_check.first["password_digest"] == password #password_digest
+            content = db.execute("SELECT content FROM reviews WHERE userid = ?", user_check.first["userid"])
             slim(:reviews, locals:{userid:user_check, content:content})
         else
             set_error("Wrong password!")
@@ -42,20 +42,20 @@ end
 
 
 post("/new") do
- #   db = connect_db("db/database.db")
-  #  title = params[:title]
-   # title_check = db.execute("SELECT title FROM titles")
-    #if title_check.scan(/#{title}/).empty?
-     #   db.execute("INSERT INTO titles title = ?", title)
-    #end
-#    genre = params[:genre]
- #   genre_check = db.execute("SELECT genre FROM titles")
-  #  if genre_check.scan(/#{genre}/).empty?
-   #     db.execute("INSERT INTO genres genre = ?", genre)
-    #end
- #   review = params[:review]
-  #  db.execute("INSERT INTO reviews content = ?", review)
-   # redirect("/reviews")
+    db = connect_db("db/database.db")
+    title = params[:title]
+    title_check = db.execute("SELECT title FROM titles")
+    if title_check.scan(/#{title}/).empty?
+        db.execute("INSERT INTO titles title = ?", title)
+    end
+    genre = params[:genre]
+    genre_check = db.execute("SELECT genre FROM titles")
+    if genre_check.scan(/#{genre}/).empty?
+        db.execute("INSERT INTO genres genre = ?", genre)
+    end
+    review = params[:review]
+    db.execute("INSERT INTO reviews content = ?", review)
+    redirect("/reviews")
 end
 
 get("/reviews") do
