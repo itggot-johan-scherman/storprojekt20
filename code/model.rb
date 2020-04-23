@@ -40,13 +40,55 @@ def add_review()
     db.execute("INSERT INTO reviews (content, userid, titleid, genreid) VALUES (?, ?, ?, ?)", review, userid, titleid, genreid)
 end
 
+def test_new_username(username)
+    user_check = get_userid(username)
+    if user_check !.any? 
+        return true
+    else
+        return false
+    end
+end
+
+def test_new_password(password, password_match)
+    password_digest = BCrypt::Password.create(password)
+    if password_match == password
+        add_user(username, password_digest)
+        userid = get_userid(username)
+        return true
+        redirect("/newuser")
+    else
+        set_error("Different passwords!")
+        return false
+    end
+end
+
+def test_username(username)
+    user_check = get_userid(username)
+    if user_check != nil
+        return true
+    else
+        #set_error("User does not exist")
+        return false
+    end
+end
 
 
-def create_test(username, password)
+
+def test_password(username, password)
     digest_check = get_password_digest(username)
     digest_test = BCrypt::Password.new(digest_check)
     digest_temp = BCrypt::Password.create(password)
+    if digest_test == digest_temp
+        #session[:username] = username
+        #session[:currentuserid] = user_check
+        #redirect("/reviews")
+        return true
+    else
+        #set_error("Wrong password!")
+        return false
+    end
 end
+
 
 def add_user(username, password_digest)
     db.execute("INSERT INTO users (username, password_digest) VALUES (?, ?)", username, password_digest)
