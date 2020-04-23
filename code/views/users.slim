@@ -1,0 +1,7 @@
+header
+    h1 all users
+    ul
+        - :users.each do |user|
+            username = user[0][0]
+            li = username 
+                a href="/users/delete/#{user}" delete
