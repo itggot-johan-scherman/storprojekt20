@@ -24,7 +24,7 @@ post("/newuser") do
     db = connect_db("db/database.db")
     if test_new_username(username) == true
         if test_new_password(username, password) == true
-            userid = get_userid(username)
+            :currentuserid = get_userid(username)
             redirect("/newuser")
         elsif false
             set_error("Different passwords!")
@@ -39,7 +39,7 @@ post("/newuser") do
 end
 
 get("/newuser") do
-    slim(:reviews, locals:{username:username, currentuserid:userid})
+    redirect("/reviews")
 end
 
 post("/reviews") do
