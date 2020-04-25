@@ -10,22 +10,27 @@ enable :sessions
 
 def set_error(error)
     slim(:error, locals:{message:error})
-    time = Time.now
+    session[:time] = Time.now
 end
 
 get("/") do
     slim(:index)
 end
 
-post("/newuser") do
+post("/users/new") do
+    if check_time(:time) == false
+        set_error("DDOS")
+    end
     username = params[:username]
     password = params[:password]
     password_match = params[:password_match]
     db = connect_db("db/database.db")
     if test_new_username(username) == true
         if test_new_password(username, password) == true
-            :currentuserid = get_userid(username)
-            redirect("/newuser")
+            add_user(username, password)
+            session[:username] = username
+            session[:currentuserid] = get_userid(username)
+            redirect("/reviews")
         elsif false
             set_error("Different passwords!")
         else
@@ -38,11 +43,10 @@ post("/newuser") do
     end
 end
 
-get("/newuser") do
-    redirect("/reviews")
-end
-
 post("/reviews") do
+    if check_time(:time) == false
+        set_error("DDOS")
+    end
     username = params[:username]
     password = params[:password]
     db = connect_db("db/database.db")
@@ -63,22 +67,13 @@ post("/reviews") do
     end
 end
 
-
-
 get("/reviews") do
     db = connect_db("db/database.db")
-    reviews = db.execute("SELECT reviewid FROM reviews")
-    reviews.each do |element|
-        :data = db.execute("SELECT * FROM reviews WHERE reviewid = ?", element)
-        :title = db.execute("SELECT title FROM titles WHERE titleid = ?", :data[2][0])
-        :genre = db.execute("SELECT genre FROM genres WHERE genreid = ?", :data[4][0])
-        :user = db.execute("SELECT user FROM users WHERE userid = ?", :data[3][0])
-        :content = :data[1][0]
-    end
-    slim(:reviews, locals:{:data, :title, :genre, :user, :content, :username, :currentuserid})
+    get_reviews()
+    slim(:reviews)
 end
 
-post("/newreview") do
+post("/reviews/new") do
     db = connect_db("db/database.db")
     title = params[:title]
     genre = params[:genre]
@@ -107,14 +102,35 @@ post("/newreview") do
     redirect("/reviews")
 end
 
-
-
-get("/users") do
-    usernames = db.execute("SELECT * FROM users")
-    userids = db.execute
-    slim(:users, locals:{usernames:usernames})
+get("/reviews/edit") do
+    session[:old_content] = params[:content]
+    db = connect_db("db/database.db")
+    slim(:edit, locals:{content:old_content:})
 end
 
-get("/deleteuser") do
-    #db.execute("REMOVE * FROM (users, reviews) WHERE userid = ?")
+post("/reviews/edit") do
+    new_content = params[:content]
+    db = connect_db("db/database.db")
+    edit_review(new_content, :old_content)
+    slim(:reviews)
+end
+
+post("/reviews/delete") do
+    reviewid = params[:delete]
+    db = connect_db()
+    delete_review(reviewid)
+    slim(:reviews)
+end
+
+get("/users") do
+    db = connect_db("db/database.db")
+    user_datas = get_user_datas()
+    slim(:users, locals:{users:user_datas})
+end
+
+post("/users/delete") do
+    userid = params[:banned]
+    db = connect_db("db/database.db")
+    delete_user(userid)
+    slim(:users)
 end

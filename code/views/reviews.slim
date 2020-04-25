@@ -2,12 +2,11 @@ header
     h1 signed in as #{:username}
     a href="/" log out
     - db = connect_db("db/database.db")
-    - admin_check = db.execute("SELECT admin FROM users WHERE username = ?", :username)[0][0]
-    - if admin_check == "true"
-        a href="/users" user list
+    - if admin_check(:username) == "true"
+        a href="/users" users
 
 h1 write a review
-form action="/newreview" method="post"
+form action="/reviews/new" method="post"
         input type="text" name="title" placeholder="[TITLE](ALL CAPS)"
         input type="text" name="genre" placeholder="genre (all lowercase)"
         input type="text" name="review" placeholder="thoughts?"
@@ -15,20 +14,19 @@ form action="/newreview" method="post"
 
 h1 reviews
 ul
-    - db = connect_db("db/database.db")
-        - reviews = db.execute("SELECT reviewid FROM reviews")
-            - reviews.each do |element|
-                - :data = db.execute("SELECT * FROM reviews WHERE reviewid = ?", element)
-                - :title = db.execute("SELECT title FROM titles WHERE titleid = ?", :data[2][0])
-                - :genre = db.execute("SELECT genre FROM genres WHERE genreid = ?", :data[4][0])
-                - :user = db.execute("SELECT user FROM users WHERE userid = ?", :data[3][0])
-                - :content = :data[1][0]
-                - if :data[3][0] == :currentuserid
-                    li = "Review of the #{:genre} album #{:title}, written by YOU:/n#{:content}/n" 
-                        a href="/reviews/edit/#{:content}" edit 
-                        a href="/delete/#{:data}" delete
-                - elsif admin_check == "true"
-                    li = "Review of the #{:genre} album #{:title}, written by #{:user}:/n#{:content}/n"
-                        a href="/delete/#{:data}" delete
-                - else
-                    li = "Review of the #{:genre} album #{:title}, written by #{:user}:/n#{:content}/n"
+    - :datas.each do |data|
+        - if data[0] == :currentuserid
+            li = "Review of the #{data[1]} album #{data[2]}, written by YOU:/n#{data[4]}/n" 
+                form action="/reviews/edit" method="get"
+                    input type="hidden" name="content" value="#{data[4]}"
+                    input type="submit" value="edit"
+                form action="/reviews/delete" method="post"
+                    input type="hidden" name="delete" value="#{data[5]}"
+                    input type="submit" value="delete"
+        - elsif admin_check(:username) == "true"
+            li = "Review of the #{data[1]} album #{data[2]}, written by #{data[3]}:/n#{data[4]}/n"
+                form action="/reviews/delete" method="post"
+                    input type="hidden" name="delete" value="#{data[5]}"
+                    input type="submit" value="delete"
+        - else
+            li = "Review of the #{data[1]} album #{data[2]}, written by #{data[3]}:/n#{data[4]}/n"

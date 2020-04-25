@@ -1,7 +1,10 @@
 header
-    h1 all users
+    a href="/reviews" reviews
+    h1 users
     ul
         - :users.each do |user|
-            username = user[0][0]
+            - username = user[1][0]
             li = username 
-                a href="/users/delete/#{user}" delete
+                form action="/users/delete" method="post"
+                    input type="hidden" name="banned" value="#{user[0][0]}"
+                    input type="submit" value="delete"
