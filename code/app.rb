@@ -1,85 +1,128 @@
+require_relative './model.rb'
 require 'sinatra'
 require 'slim'
 require 'sqlite3'
 require 'bcrypt'
 require 'byebug'
-require_relative './model.rb'
+
 enable :sessions
 
+include Model
 
-
+# Displays the error page, also checks the time to deny a potential DDOS upon further errors
+# 
+# @param [String] error, The message to be displayed
 def set_error(error)
     slim(:error, locals:{message:error})
-    session[:time] = Time.now
+    session[:time] = Time.now.to_i
 end
 
+# Displays landing page
+#
 get("/") do
     slim(:index)
 end
 
+# Creates a new user and redirects to the review page
+#
+# @param [String] username, the submitted username
+# @param [String] password, the submitted password
+# @param [String] password_match, submitted password confirmation
+# @see Model#test_new_username
+# @see Model#test_new_password
+# @see Model#get_userid
+# @see Model#admin_check
 post("/users/new") do
-    if check_time(:time) == false
+    if check_time(session[:time]) == false
         set_error("DDOS")
     end
     username = params[:username]
     password = params[:password]
     password_match = params[:password_match]
-    db = connect_db("db/database.db")
-    if test_new_username(username) == true
-        if test_new_password(username, password) == true
+    new_user_result = test_new_username(username)
+    if new_user_result == true
+        new_password_result = test_new_password(password, password_match)
+        if  new_password_result == true
             add_user(username, password)
             session[:username] = username
             session[:currentuserid] = get_userid(username)
+            session[:admin] = admin_check(username)
             redirect("/reviews")
-        elsif false
+        elsif new_password_result == false
             set_error("Different passwords!")
         else
             set_error("Something went wrong :(")
         end
-    elsif false
+    elsif new_user_result == false
         set_error("That username is taken!")
     else
         set_error("Something went wrong :(")
     end
 end
 
+# Authorizes and validates the user trying to log in and redirects to the review page if everything is correct
+#
+# @param [String] username, the submitted username
+# @param [String] password, the submitted password
+#
+# @see Model#test_username
+# @see Model#test_password
+# @see Model#get_userid
+# @see Model#admin_check
 post("/reviews") do
-    if check_time(:time) == false
+    if check_time(session[:time]) == false
         set_error("DDOS")
     end
     username = params[:username]
     password = params[:password]
-    db = connect_db("db/database.db")
-    if test_username(username) == true
-        if test_password(username, password) == true
+    user_result = test_username(username)
+    if user_result == true
+        password_result = test_password(username, password)
+        if password_result == true
             session[:username] = username
-            session[:currentuserid] = user_check
+            session[:currentuserid] = get_userid(username)
+            session[:admin] = admin_check(username)
             redirect("/reviews")
-        elsif false
+        elsif password_result == false
             set_error("Wrong password!")
         else
             set_error("Something went wrong")
         end
-    elsif false
+    elsif user_result == false
         set_error("User does not exist")
     else
         set_error("Something went wrong")
     end
 end
 
+# Displays the main review page
+#
+# @see Model#get_reviews
 get("/reviews") do
-    db = connect_db("db/database.db")
-    get_reviews()
-    slim(:reviews)
+    datas = get_reviews()
+    slim(:reviews, locals:{datas:datas})
 end
 
+# Creates a new review and redirects to an updated review page
+#
+# @param [string] title, the submitted title
+# @param [string] genre, the submitted genre
+# @param [string] review, the content of the submitted review
+#
+# @see Model#get_genres
+# @see Model#add_genre
+# @see Model#get_genreid
+# @see Model#get_titles
+# @see Model#add_title
+# @see Model#get_titleid
+# @see Model#get_userid
+# @see Model#add_review
 post("/reviews/new") do
-    db = connect_db("db/database.db")
     title = params[:title]
     genre = params[:genre]
-    username = session[:username]
+    review = params[:review]
     genre_check = get_genres()
-    genre_matches = Array.new
+    genre_matches = []
     genre_check.each do |element|
         genre_matches << /#{genre}/.match(element["genre"])
     end
@@ -88,7 +131,7 @@ post("/reviews/new") do
     end
     genreid = get_genreid(genre)
     title_check = get_titles()
-    title_matches = Array.new
+    title_matches = []
     title_check.each do |element|
         title_matches << /#{title}/.match(element["title"])
     end
@@ -96,41 +139,56 @@ post("/reviews/new") do
         add_title(title, genreid)
     end
     titleid = get_titleid(title)
-    review = params[:review]
-    userid = get_userid(username)
+    userid = get_userid(session[:username])
     add_review(review, userid, titleid, genreid)
     redirect("/reviews")
 end
 
+# Displays the page for editing an existing review
+#
 get("/reviews/edit") do
     session[:old_content] = params[:content]
-    db = connect_db("db/database.db")
-    slim(:edit, locals:{content:old_content:})
+    session[:edit_id] = params[:id]
+    slim(:edit)
 end
 
+# Replaces an existing review with a new edited one, then redirects to the review page.
+#
+# @param [String] new_content, the new review being put into place
+# 
+# @see Model#edit_review
 post("/reviews/edit") do
-    new_content = params[:content]
-    db = connect_db("db/database.db")
-    edit_review(new_content, :old_content)
-    slim(:reviews)
+    new_content = params[:new_content]
+    edit_review(new_content)
+    redirect("/reviews")
 end
 
+# Removes an existing review and redirects to an updated review page.
+#
+# @param [Integer] reviewid, the ID of the review to be deleted
+#
+# @see Model#delete_review
 post("/reviews/delete") do
     reviewid = params[:delete]
-    db = connect_db()
     delete_review(reviewid)
-    slim(:reviews)
+    redirect("/reviews")
 end
 
+# Displays a list of all users, and links to delete them.
+#
+# @see Model#get_user_datas
 get("/users") do
-    db = connect_db("db/database.db")
     user_datas = get_user_datas()
     slim(:users, locals:{users:user_datas})
 end
 
+# Deletes a user and all of their reviews, then redirects to the user page. (not working :/)
+#
+# @param [String] userid, the ID user to be removed
+#
+# @see Model#delete_user
 post("/users/delete") do
     userid = params[:banned]
-    db = connect_db("db/database.db")
     delete_user(userid)
-    slim(:users)
+    redirect("/users")
 end

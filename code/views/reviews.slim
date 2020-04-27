@@ -1,8 +1,8 @@
 header
-    h1 signed in as #{:username}
+    h1 = "signed in as #{session[:username]}"
     a href="/" log out
-    - db = connect_db("db/database.db")
-    - if admin_check(:username) == "true"
+
+    - if session[:admin] == "true"
         a href="/users" users
 
 h1 write a review
@@ -14,19 +14,23 @@ form action="/reviews/new" method="post"
 
 h1 reviews
 ul
-    - :datas.each do |data|
-        - if data[0] == :currentuserid
-            li = "Review of the #{data[1]} album #{data[2]}, written by YOU:/n#{data[4]}/n" 
+    - datas.each do |data|
+        - if data[0] == session[:currentuserid]
+            li 
+                h2 = "Review of the #{data[1]} album #{data[2]}, written by YOU: #{data[4]}" 
                 form action="/reviews/edit" method="get"
                     input type="hidden" name="content" value="#{data[4]}"
+                    input type="hidden" name="id" value="#{data[5]}"
                     input type="submit" value="edit"
                 form action="/reviews/delete" method="post"
                     input type="hidden" name="delete" value="#{data[5]}"
                     input type="submit" value="delete"
-        - elsif admin_check(:username) == "true"
-            li = "Review of the #{data[1]} album #{data[2]}, written by #{data[3]}:/n#{data[4]}/n"
+        - elsif session[:admin] == "true"
+            li
+                h2 = "Review of the #{data[1]} album #{data[2]}, written by #{data[3]}: #{data[4]}"
                 form action="/reviews/delete" method="post"
                     input type="hidden" name="delete" value="#{data[5]}"
                     input type="submit" value="delete"
         - else
-            li = "Review of the #{data[1]} album #{data[2]}, written by #{data[3]}:/n#{data[4]}/n"
+            li 
+                h2 = "Review of the #{data[1]} album #{data[2]}, written by #{data[3]}: #{data[4]}"

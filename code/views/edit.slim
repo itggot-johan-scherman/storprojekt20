@@ -2,6 +2,7 @@ header
     a href="/reviews" reviews
 
 h1 edit review
+h1 = "old review: #{session[:old_content]}" 
 form action="/reviews/edit" method="post"
-    input type="text" name="content" value="#{content}"
+    input type="text" name="new_content" placeholder="new review"
     input type="submit" value="edit"
