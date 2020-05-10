@@ -7,7 +7,7 @@ En review page där användare kan registrera sig, logga in och skriva reviews. 
 ![ER](https://github.com/itggot-johan-scherman/storprojekt20/blob/master/ER-diagram.PNG?raw=true)
 ## 4. Arkitektur (Beskriv filer och mappar - vad gör/inehåller de?)
 arkitektur:
-code/n
+code
   .yardoc - mapp autogenererad av yardoc
   db - mapp för databas
     database.db - databas
