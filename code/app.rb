@@ -119,17 +119,22 @@ end
 # @see Model#add_review
 post("/reviews/new") do
     title = params[:title]
-    genre = params[:genre]
+    titleid = get_titleid(title)
+    genre_temp = params[:genre]
+    genre_arr = genre_temp.split(', ')
     review = params[:review]
     genre_check = get_genres()
-    genre_matches = []
-    genre_check.each do |element|
-        genre_matches << /#{genre}/.match(element["genre"])
+    genre_arr.each do |genre|
+        genre_matches = []
+        genre_check.each do |element|
+            genre_matches << /#{genre}/.match(element["genre"])
+        end
+        if !genre_matches.any?
+            add_genre(genre)
+        end
+        genreid = get_genreid(genre)
+        add_relation(titleid, genreid)
     end
-    if !genre_matches.any?
-        add_genre(genre)
-    end
-    genreid = get_genreid(genre)
     title_check = get_titles()
     title_matches = []
     title_check.each do |element|
@@ -138,9 +143,9 @@ post("/reviews/new") do
     if !title_matches.any?
         add_title(title, genreid)
     end
-    titleid = get_titleid(title)
+    
     userid = get_userid(session[:username])
-    add_review(review, userid, titleid, genreid)
+    add_review(review, userid, titleid)
     redirect("/reviews")
 end
 
@@ -159,7 +164,8 @@ end
 # @see Model#edit_review
 post("/reviews/edit") do
     new_content = params[:new_content]
-    edit_review(new_content)
+    edit_id = session[:edit_id]
+    edit_review(new_content, edit_id)
     redirect("/reviews")
 end
 

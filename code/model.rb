@@ -47,6 +47,11 @@ module Model
         db.execute("INSERT INTO genres (genre) VALUES (?)", genre)
     end
 
+    def add_relation(titleid, genreid)
+        db = connect_db("db/database.db")
+        db.execute("INSERT INTO relations (titleid, genreid) VALUES (?, ?)", titleid, genreid)
+    end
+
     def get_genreid(genre)
         db = connect_db("db/database.db")
         db.execute("SELECT genreid FROM genres WHERE genre = ?", genre)[0][0]
@@ -68,14 +73,14 @@ module Model
         db.execute("SELECT titleid FROM titles WHERE title = ?", title)[0][0]
     end
 
-    def edit_review(new_content)
+    def edit_review(new_content, edit_id)
         db = connect_db("db/database.db")
-        db.execute("UPDATE reviews SET content = ? WHERE reviewid = ?", new_content, session[:edit_id])
+        db.execute("UPDATE reviews SET content = ? WHERE reviewid = ?", new_content, edit_id)
     end
 
-    def add_review(review, userid, titleid, genreid)
+    def add_review(review, userid, titleid)
         db = connect_db("db/database.db")
-        db.execute("INSERT INTO reviews (content, userid, titleid, genreid) VALUES (?, ?, ?, ?)", review, userid, titleid, genreid)
+        db.execute("INSERT INTO reviews (content, userid, titleid) VALUES (?, ?, ?)", review, userid, titleid)
     end
 
     def delete_review(reviewid)
@@ -91,11 +96,16 @@ module Model
             reviewid = element[0]
             data = db.execute("SELECT * FROM reviews WHERE reviewid = ?", reviewid)[0]
             title = db.execute("SELECT title FROM titles WHERE titleid = ?", data[2])[0]["title"]
-            genre = db.execute("SELECT genre FROM genres WHERE genreid = ?", data[4])[0]["genre"]
+            genreid = db.execute("SELECT genreid FROM relations WHERE titleid = ?", data[2])
+            genre = []
+            genreid.each do |i|
+                item = db.execute("SELECT genre FROM genres WHERE genreid = ?", i[0])
+                genre << item[0][0]
+            end
             user = db.execute("SELECT username FROM users WHERE userid = ?", data[3])[0]["username"]
             content = data[1]
             userid = data[3]
-            data_arr = [userid, genre, title, user, content, reviewid]
+            data_arr = [userid, genre.join(', '), title, user, content, reviewid]
             datas << data_arr
         end
         return datas
@@ -151,7 +161,7 @@ module Model
 
     def get_user_datas()
         db = connect_db("db/database.db")
-        db.execute("SELECT * FROM users")
+        db.execute("SELECT * FROM users WHERE admin = ?", "false")
     end
 
     def delete_user(userid)
