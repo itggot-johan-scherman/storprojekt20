@@ -42,6 +42,11 @@ module Model
         db.execute("SELECT genre FROM genres")
     end
 
+    def get_relations(titleid)
+        db = connect_db("db/database.db")
+        db.execute("SELECT genreid FROM relations WHERE titleid = ?", titleid)
+    end
+
     def add_genre(genre)
         db = connect_db("db/database.db")
         db.execute("INSERT INTO genres (genre) VALUES (?)", genre)
@@ -63,9 +68,9 @@ module Model
     end
 
     
-    def add_title(title, genreid)
+    def add_title(title)
         db = connect_db("db/database.db")
-        db.execute("INSERT INTO titles (title, genreid) VALUES (?, ?)", title, genreid)
+        db.execute("INSERT INTO titles (title) VALUES (?)", title)
     end
 
     def get_titleid(title)
@@ -112,7 +117,6 @@ module Model
     end
 
     def test_new_username(username)
-        p username
         user_check = get_userid(username)
         if !user_check.any? 
             return true
@@ -166,7 +170,8 @@ module Model
 
     def delete_user(userid)
         db = connect_db("db/database.db")
-        db.execute("DELETE FROM (users, reviews) WHERE userid = ?", userid)
+        db.execute("DELETE FROM users WHERE userid = ?", userid)
+        db.execute("DELETE FROM reviews WHERE userid = ?", userid)
     end
 
 end
