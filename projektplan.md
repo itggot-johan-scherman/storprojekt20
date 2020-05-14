@@ -5,6 +5,7 @@ En review page där användare kan registrera sig, logga in och skriva reviews. 
 ## 2. Vyer (visa bildskisser på dina sidor)
 ![login](https://github.com/itggot-johan-scherman/storprojekt20/blob/master/login.PNG?raw=true)
 ![reviews](https://github.com/itggot-johan-scherman/storprojekt20/blob/master/reviews.PNG?raw=true)
+![reviews](https://github.com/itggot-johan-scherman/storprojekt20/blob/master/edit.PNG?raw=true)
 ![admin](https://github.com/itggot-johan-scherman/storprojekt20/blob/master/admin.PNG?raw=true)
 ![users](https://github.com/itggot-johan-scherman/storprojekt20/blob/master/users.PNG?raw=true)
 ## 3. Databas med ER-diagram (Bild)
